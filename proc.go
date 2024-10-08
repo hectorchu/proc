@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"math"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -69,11 +68,7 @@ func (p *Proc) Cmd(name string, arg ...string) *Proc {
 		if err = c.Start(); err != nil {
 			return
 		}
-		if err = p.Err(); err != nil {
-			return
-		}
-		err = c.Wait()
-		if _, ok := err.(*exec.ExitError); !ok {
+		if _, err = c.Process.Wait(); err != nil {
 			return
 		}
 		if s := bufio.NewScanner(&buf); s.Scan() {
@@ -115,20 +110,6 @@ func (p *Proc) Nul() *Proc {
 	return Fun(func(io.Writer) error {
 		_, err := io.Copy(io.Discard, p)
 		return err
-	})
-}
-
-func (p *Proc) Put(name string) *Proc {
-	return Fun(func(w io.Writer) (err error) {
-		f, err := os.Create(name)
-		if err != nil {
-			return
-		}
-		_, err = io.Copy(f, p)
-		if err2 := f.Close(); err == nil {
-			err = err2
-		}
-		return
 	})
 }
 
